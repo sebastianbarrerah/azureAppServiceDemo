@@ -1,35 +1,40 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
+#Nombre del workflow en action
 name: Build and deploy Node.js app to Azure Web App - pruebaServiceApp
-
+#Aqui se le dice que cuando se haga push en la rama main se ejecute desde woekflow_dispatch
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
+  
+#Aquí se configura un entorno de ejecución en Ubuntu para realizar el build. Estos son caracterisiticas del appservice
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read #This is required for actions/checkout
-
+      
+#Descarga el código del repositorio en la máquina virtual de GitHub Actions
     steps:
       - uses: actions/checkout@v4
-
+#Configura Node.js en la versión 22.x para ejecutar el código.
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
-
+          
+  # Instala dependencias, ejecuta el build (si existe) y corre los tests (si hay)
       - name: npm install, build, and test
         run: |
           npm install
 
+#Empaqueta el proyecto en un archivo release.zip para enviarlo a Azure.
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
-
+#Sube el ZIP como un artefacto para que el job de despliegue lo pueda usar.
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -42,16 +47,19 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    #Este job depende del build, se ejecuta solo si el build fue exitoso.
     
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
-
+ #Descarga el ZIP generado en el paso anterior.
       - name: Unzip artifact for deployment
         run: unzip release.zip
-      
+      #Extrae el contenido del ZIP antes de enviarlo a Azure.
+
+      #Despliega la aplicación a Azure App Service usando el perfil de publicación almacenado en GitHub
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
